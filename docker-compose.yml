@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: pcap-analyzer-backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend/uploads:/app/backend/uploads
+      - ./backend/data:/app/backend/data
+    networks:
+      - pcap-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pcap-analyzer-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - pcap-network
+    restart: unless-stopped
+
+networks:
+  pcap-network:
+    driver: bridge
+
+volumes:
+  backend-data:
+  backend-uploads:
