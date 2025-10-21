@@ -2,7 +2,7 @@
 FROM golang:1.21-alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache gcc musl-dev libpcap-dev
+RUN apk add --no-cache gcc musl-dev libpcap-dev sqlite-dev
 
 WORKDIR /app
 
@@ -14,13 +14,14 @@ RUN go mod download
 COPY backend/ ./backend/
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -o server ./backend/cmd/server
+RUN CGO_ENABLED=1 CGO_CFLAGS="-D_LARGEFILE64_SOURCE" GOOS=linux go build -tags "sqlite_omit_load_extension" -o server ./backend/cmd/server
+
 
 # Runtime stage
 FROM alpine:latest
 
 # Install runtime dependencies
-RUN apk add --no-cache libpcap ca-certificates
+RUN apk add --no-cache libpcap ca-certificates sqlite-libs
 
 WORKDIR /app
 
