@@ -15,18 +15,10 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Box,
-  Alert,
-} from '@mui/material';
 import { login } from '../services/api';
+import { BrandIcon, SunIcon, MoonIcon } from './icons';
 
-function Login({ onLoginSuccess }) {
+function Login({ onLoginSuccess, dark, toggleDark }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -48,67 +40,101 @@ function Login({ onLoginSuccess }) {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 8 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom align="center">
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'grid',
+        placeItems: 'center',
+        padding: 'var(--space-6)',
+        background: 'var(--color-bg)',
+        position: 'relative',
+      }}
+    >
+      <button
+        type="button"
+        className="btn btn-icon btn-secondary"
+        onClick={toggleDark}
+        title="Toggle theme"
+        aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+        style={{ position: 'absolute', top: 'var(--space-6)', right: 'var(--space-6)', width: 36, height: 36 }}
+      >
+        {dark ? <MoonIcon /> : <SunIcon />}
+      </button>
+
+      <div style={{ width: 380, maxWidth: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', marginBottom: 'var(--space-6)' }}>
+          <span className="blueprint" style={{ width: 34, height: 34, display: 'grid', placeItems: 'center', color: 'var(--color-accent)' }}>
+            <i className="corner tl"></i><i className="corner tr"></i><i className="corner bl"></i><i className="corner br"></i>
+            <BrandIcon width={18} height={18} />
+          </span>
+          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: 22, letterSpacing: '-0.01em' }}>
             PCAP Analyzer
-          </Typography>
-          <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
-            Network Traffic Analysis Platform
-          </Typography>
+          </span>
+        </div>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+        <form
+          onSubmit={handleSubmit}
+          className="blueprint"
+          style={{ padding: 'var(--space-6)', background: 'var(--color-surface)', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
+        >
+          <i className="corner tl"></i><i className="corner tr"></i><i className="corner bl"></i><i className="corner br"></i>
+          <div>
+            <h4 style={{ margin: '0 0 4px' }}>Sign in</h4>
+            <p className="text-muted" style={{ margin: 0, fontSize: 13 }}>Network capture analysis console</p>
+          </div>
 
-          <form onSubmit={handleSubmit}>
-            <TextField
-              label="Username"
-              fullWidth
-              margin="normal"
+          <div className="field">
+            <label htmlFor="ps-user">Username</label>
+            <input
+              className="input"
+              id="ps-user"
+              autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              placeholder="demo"
               required
               autoFocus
+              aria-describedby={error ? 'login-error' : undefined}
             />
-            <TextField
-              label="Password"
+          </div>
+          <div className="field">
+            <label htmlFor="ps-pass">Password</label>
+            <input
+              className="input"
+              id="ps-pass"
               type="password"
-              fullWidth
-              margin="normal"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="demo"
               required
+              aria-describedby={error ? 'login-error' : undefined}
             />
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              size="large"
-              sx={{ mt: 3 }}
-              disabled={loading}
-            >
-              {loading ? 'Logging in...' : 'Login'}
-            </Button>
-          </form>
+          </div>
 
-          <Box sx={{ mt: 3, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary" align="center">
-              Demo Account
-            </Typography>
-            <Typography variant="body2" align="center">
-              Username: <strong>demo</strong>
-            </Typography>
-            <Typography variant="body2" align="center">
-              Password: <strong>demo</strong>
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
-    </Container>
+          {error && (
+            <div id="login-error" role="alert" style={{ fontSize: 12, color: 'var(--color-accent-800)', background: 'var(--color-accent-100)', padding: '6px 10px' }}>
+              {error}
+            </div>
+          )}
+
+          <button type="submit" className="btn btn-primary btn-block blueprint" style={{ marginTop: 0 }} disabled={loading}>
+            <i className="corner tl"></i><i className="corner tr"></i><i className="corner bl"></i><i className="corner br"></i>
+            <span aria-live="polite" aria-atomic="true">
+              {loading ? 'Signing in…' : 'Sign in'}
+            </span>
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, borderTop: '1px solid var(--color-divider)', paddingTop: 'var(--space-3)' }}>
+            <span className="tag tag-outline">DEMO</span>
+            <span className="text-muted">
+              Username <strong style={{ color: 'var(--color-text)' }}>demo</strong> · Password{' '}
+              <strong style={{ color: 'var(--color-text)' }}>demo</strong>
+            </span>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 

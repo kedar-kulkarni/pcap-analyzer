@@ -15,126 +15,162 @@
  */
 
 import React, { useState } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  Button,
-  LinearProgress,
-  Alert,
-} from '@mui/material';
-import { CloudUpload } from '@mui/icons-material';
 import { uploadPCAP } from '../services/api';
-import { useNavigate } from 'react-router-dom';
+import { CloseIcon, UploadCloudIcon } from './icons';
 
-function Upload() {
-  const [file, setFile] = useState(null);
+// Body of the "Add PCAP file" dialog: a drag-and-drop zone that uploads
+// as soon as a valid file is chosen (matching the design's instant-add
+// feel), with a real progress bar and error recovery since the actual
+// upload is asynchronous and can fail — unlike the design mock's synthetic
+// data generator.
+function Upload({ onUploadSuccess, onCancel }) {
+  const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [dragOver, setDragOver] = useState(false);
+  const [fileName, setFileName] = useState('');
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      const ext = selectedFile.name.split('.').pop().toLowerCase();
-      if (ext === 'pcap' || ext === 'pcapng') {
-        setFile(selectedFile);
-        setError('');
-      } else {
-        setError('Invalid file type. Please select a .pcap or .pcapng file.');
-        setFile(null);
-      }
-    }
+  const isValidExt = (name) => {
+    const ext = name.split('.').pop().toLowerCase();
+    return ext === 'pcap' || ext === 'pcapng';
   };
 
-  const handleUpload = async () => {
+  const startUpload = async (file) => {
     if (!file) return;
+    if (!isValidExt(file.name)) {
+      setError('Invalid file type. Please select a .pcap or .pcapng file.');
+      return;
+    }
 
-    setUploading(true);
     setError('');
+    setFileName(file.name);
+    setUploading(true);
     setProgress(0);
 
     try {
       const result = await uploadPCAP(file, (progressEvent) => {
-        const percentCompleted = Math.round(
-          (progressEvent.loaded * 100) / progressEvent.total
-        );
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
         setProgress(percentCompleted);
       });
-
-      // Navigate to analysis results
-      navigate(`/analysis/${result.analysis_id}`);
+      onUploadSuccess(result.analysis_id);
     } catch (err) {
       setError(err.response?.data?.error || 'Upload failed');
       setUploading(false);
     }
   };
 
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (uploading) return;
+    startUpload(e.dataTransfer?.files?.[0]);
+  };
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!dragOver) setDragOver(true);
+  };
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+  const handlePick = (e) => {
+    startUpload(e.target.files?.[0]);
+  };
+
   return (
-    <Paper elevation={2} sx={{ p: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        Upload PCAP File
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Upload a .pcap or .pcapng file for analysis
-      </Typography>
+    <>
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        <div style={{ flex: 1 }}>
+          <div className="dialog-title" id="upload-dialog-title">Add PCAP file</div>
+          <p className="text-muted" style={{ margin: '2px 0 0', fontSize: 13 }}>Upload a capture to analyze</p>
+        </div>
+        <button
+          type="button"
+          className="btn btn-icon btn-ghost"
+          onClick={onCancel}
+          title="Close"
+          aria-label="Close dialog"
+          style={{ borderColor: 'transparent' }}
+          disabled={uploading}
+        >
+          <CloseIcon width={18} height={18} />
+        </button>
+      </div>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <div
+          role="alert"
+          style={{ fontSize: 12, color: 'var(--color-accent-800)', background: 'var(--color-accent-100)', padding: '6px 10px' }}
+        >
           {error}
-        </Alert>
+        </div>
       )}
 
-      <Box
-        sx={{
-          border: '2px dashed',
-          borderColor: 'primary.main',
-          borderRadius: 2,
-          p: 4,
-          textAlign: 'center',
-          mb: 2,
-        }}
-      >
-        <CloudUpload sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
-        <input
-          accept=".pcap,.pcapng"
-          style={{ display: 'none' }}
-          id="file-upload"
-          type="file"
-          onChange={handleFileChange}
-          disabled={uploading}
-        />
-        <label htmlFor="file-upload">
-          <Button variant="outlined" component="span" disabled={uploading}>
-            Choose File
-          </Button>
+      {uploading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 'var(--space-8) var(--space-6)' }}>
+          <div className="ps-spinner" aria-hidden="true"></div>
+          <span aria-hidden="true" style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: 15 }}>
+            Uploading {fileName}…
+          </span>
+          <div
+            role="progressbar"
+            aria-label="File upload progress"
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="progress-track"
+          >
+            <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+          </div>
+          <span aria-hidden="true" className="text-muted" style={{ fontSize: 12.5 }}>{progress}%</span>
+          <div className="sr-only" aria-live="assertive" aria-atomic="true">
+            Uploading {fileName}, {progress}% complete
+          </div>
+        </div>
+      ) : (
+        <label
+          className="ps-drop"
+          data-drag={dragOver}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 10,
+            padding: 'var(--space-8) var(--space-6)',
+            border: '1.5px dashed var(--color-divider)',
+            cursor: 'pointer',
+            textAlign: 'center',
+            transition: 'background 0.1s, border-color 0.1s',
+          }}
+        >
+          <span style={{ color: 'var(--color-accent)' }}>
+            <UploadCloudIcon width={34} height={34} />
+          </span>
+          <span style={{ fontFamily: 'var(--font-heading)', fontWeight: 600, fontSize: 16 }}>
+            Drag &amp; drop a .pcap file
+          </span>
+          <span className="text-muted" style={{ fontSize: 12.5 }}>
+            or <span style={{ color: 'var(--color-accent)' }}>browse</span> to choose · .pcap, .pcapng
+          </span>
+          <input
+            type="file"
+            accept=".pcap,.pcapng"
+            onChange={handlePick}
+            style={{ display: 'none' }}
+            aria-label="Choose a PCAP file to upload"
+          />
         </label>
-        {file && (
-          <Typography variant="body2" sx={{ mt: 2 }}>
-            Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-          </Typography>
-        )}
-      </Box>
-
-      {uploading && (
-        <Box sx={{ mb: 2 }}>
-          <LinearProgress variant="determinate" value={progress} />
-          <Typography variant="body2" align="center" sx={{ mt: 1 }}>
-            Uploading: {progress}%
-          </Typography>
-        </Box>
       )}
 
-      <Button
-        variant="contained"
-        fullWidth
-        onClick={handleUpload}
-        disabled={!file || uploading}
-      >
-        {uploading ? 'Uploading...' : 'Upload and Analyze'}
-      </Button>
-    </Paper>
+      <div className="dialog-actions">
+        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={uploading}>
+          Cancel
+        </button>
+      </div>
+    </>
   );
 }
 

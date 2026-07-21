@@ -14,29 +14,37 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import AnalysisResults from './components/AnalysisResults';
 import { checkSession } from './services/api';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
+const THEME_KEY = 'ps-theme';
+
+function readDark() {
+  try {
+    return localStorage.getItem(THEME_KEY) === 'dark';
+  } catch (e) {
+    return false;
+  }
+}
 
 function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [dark, setDark] = useState(readDark);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    try {
+      localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light');
+    } catch (e) {
+      // localStorage unavailable (e.g. private browsing) — theme just won't persist.
+    }
+  }, [dark]);
+
+  const toggleDark = useCallback(() => setDark((d) => !d), []);
 
   useEffect(() => {
     const verifySession = async () => {
@@ -57,48 +65,53 @@ function App() {
     setAuthenticated(true);
   };
 
+  const handleLogout = () => {
+    setAuthenticated(false);
+  };
+
   if (loading) {
-    return null;
+    return (
+      <div role="status" className="sr-only">
+        Loading application…
+      </div>
+    );
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <Routes>
-          <Route
-            path="/login"
-            element={
-              authenticated ? (
-                <Navigate to="/" replace />
-              ) : (
-                <Login onLoginSuccess={handleLoginSuccess} />
-              )
-            }
-          />
-          <Route
-            path="/"
-            element={
-              authenticated ? (
-                <Dashboard />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-          <Route
-            path="/analysis/:id"
-            element={
-              authenticated ? (
-                <AnalysisResults />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-        </Routes>
-      </Router>
-    </ThemeProvider>
+    <Router>
+      <Routes>
+        <Route
+          path="/login"
+          element={
+            authenticated ? (
+              <Navigate to="/" replace />
+            ) : (
+              <Login onLoginSuccess={handleLoginSuccess} dark={dark} toggleDark={toggleDark} />
+            )
+          }
+        />
+        <Route
+          path="/"
+          element={
+            authenticated ? (
+              <Dashboard dark={dark} toggleDark={toggleDark} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+        <Route
+          path="/analysis/:id"
+          element={
+            authenticated ? (
+              <Dashboard dark={dark} toggleDark={toggleDark} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+      </Routes>
+    </Router>
   );
 }
 
