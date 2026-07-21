@@ -1,3 +1,6 @@
+[![CodeQL](https://github.com/kedar-kulkarni/pcap-analyzer/actions/workflows/github-code-scanning/codeql/badge.svg?branch=master)](https://github.com/kedar-kulkarni/pcap-analyzer/actions/workflows/github-code-scanning/codeql) [![Go](https://github.com/kedar-kulkarni/pcap-analyzer/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/kedar-kulkarni/pcap-analyzer/actions/workflows/go.yml) [![Dependency Graph](https://github.com/kedar-kulkarni/pcap-analyzer/actions/workflows/dependabot/update-graph/badge.svg?branch=master)](https://github.com/kedar-kulkarni/pcap-analyzer/actions/workflows/dependabot/update-graph) [![Node.js CI](https://github.com/kedar-kulkarni/pcap-analyzer/actions/workflows/node.js.yml/badge.svg?branch=master)](https://github.com/kedar-kulkarni/pcap-analyzer/actions/workflows/node.js.yml)
+
+
 # PCAP Analyzer
 
 A comprehensive network traffic analysis platform built with Go and React. This tool provides detailed analysis of PCAP files including asset discovery, OS fingerprinting, connection tracking, and more.
